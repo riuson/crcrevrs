@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ARG_PARSER_H
+#define ARG_PARSER_H
 
 #include <stdint.h>
 #include "recover.h"
@@ -26,3 +27,5 @@ public:
 	uint8_t verbose();
 };
 
+
+#endif // ARG_PARSER_H

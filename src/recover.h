@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RECOVER_H
+#define RECOVER_H
 
 #include <stdint.h>
 
@@ -27,3 +28,4 @@ private:
 	uint32_t calculateStub(uint32_t a, uint32_t f);
 };
 
+#endif // RECOVER_H
