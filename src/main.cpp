@@ -16,23 +16,21 @@ void ShowHelp(void);
 void Log(const char *str);
 void LogNull(const char *str);
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
 
     ArgumentsParser parser(argc, argv);
 
-    if (parser.valid())
-    {
+    if (parser.valid()) {
         logger *log = &LogNull;
-        if (parser.verbose() != 0)
-        {
+
+        if (parser.verbose() != 0) {
             log = &Log;
         }
 
         Recover recover;
         recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crcSource(), parser.crc(), log);
-    }
-    else
-    {
+    } else {
         ShowHelp();
     }
 
@@ -52,7 +50,7 @@ void LogNull(const char *str)
 void ShowHelp(void)
 {
     Log(
-"CRC-32 Recovery Utility\n\
+        "CRC-32 Recovery Utility\n\
 Using:\n\
 crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --output \"e:\\data\\file2.bin\" \n\
 --address   address of stub to correct calculated crc.\n\
