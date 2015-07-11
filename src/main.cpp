@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     if (parser.valid()) {
         logger *log = &LogNull;
 
-        if (parser.verbose() != 0) {
+        if (parser.verbose()) {
             log = &Log;
         }
 

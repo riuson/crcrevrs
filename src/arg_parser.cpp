@@ -31,9 +31,9 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         SO_END_OF_OPTIONS
     };
 
-    this->mValid = 1;
+    this->mValid = true;
     this->mCrcSource = CrcFromInput;
-    this->mVerbose = 0;
+    this->mVerbose = false;
     int count = 0;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
@@ -81,12 +81,12 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 }
 
                 case OPT_VERBOSE: {
-                    this->mVerbose = 1;
+                    this->mVerbose = true;
                     break;
                 }
 
                 default: {
-                    this->mValid = 0;
+                    this->mValid = false;
                     break;
                 }
             }
@@ -99,12 +99,12 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         } else {
             // handle error, one of: SO_OPT_INVALID, SO_OPT_MULTIPLE,
             // SO_ARG_INVALID, SO_ARG_INVALID_TYPE, SO_ARG_MISSING
-            this->mValid = 0;
+            this->mValid = false;
         }
     }
 
     if (count != 4) {
-        this->mValid = 0;
+        this->mValid = false;
     }
 }
 
@@ -113,7 +113,7 @@ ArgumentsParser::~ArgumentsParser(void)
 {
 }
 
-uint8_t ArgumentsParser::valid(void)
+bool ArgumentsParser::valid(void)
 {
     return (this->mValid);
 }
@@ -143,7 +143,7 @@ char *ArgumentsParser::outputFileName(void)
     return (this->mOutputFileName);
 }
 
-uint8_t ArgumentsParser::verbose(void)
+bool ArgumentsParser::verbose(void)
 {
     return (this->mVerbose);
 }
