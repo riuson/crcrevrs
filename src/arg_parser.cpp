@@ -10,13 +10,13 @@ using namespace std;
 ArgumentsParser::ArgumentsParser(int argc, char *argv[])
 {
     enum {
-        OPT_HELP,
-        OPT_ADDRESS,
-        OPT_CRC,
-        OPT_CRC_AT,
-        OPT_INPUT,
-        OPT_OUTPUT,
-        OPT_VERBOSE
+        OPT_HELP    = (0x01 << 0),
+        OPT_ADDRESS = (0x01 << 1),
+        OPT_CRC     = (0x01 << 2),
+        OPT_CRC_AT  = (0x01 << 3),
+        OPT_INPUT   = (0x01 << 4),
+        OPT_OUTPUT  = (0x01 << 5),
+        OPT_VERBOSE = (0x01 << 6)
     };
 
     CSimpleOpt::SOption g_rgOptions[] = {
@@ -31,10 +31,9 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         SO_END_OF_OPTIONS
     };
 
-    this->mValid = true;
     this->mCrcSource = CrcFromInput;
     this->mVerbose = false;
-    int count = 0;
+    uint32_t argumentFlags = 0;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
 
@@ -46,7 +45,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
                     this->mAddress = a;
-                    count++;
+                    argumentFlags |= OPT_ADDRESS;
                     break;
                 }
 
@@ -55,7 +54,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                     sscanf(args.OptionArg(), "%x", &a);
                     this->mCrc = a;
                     this->mCrcSource = CrcFromInput;
-                    count++;
+                    argumentFlags |= OPT_CRC;
                     break;
                 }
 
@@ -64,29 +63,30 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                     sscanf(args.OptionArg(), "%x", &a);
                     this->mCrc = a;
                     this->mCrcSource = CrcFromAddress;
-                    count++;
+                    argumentFlags |= OPT_CRC_AT;
                     break;
                 }
 
                 case OPT_INPUT: {
                     snprintf(this->mInputFileName, sizeof(this->mInputFileName), "%s", args.OptionArg());
-                    count++;
+                    argumentFlags |= OPT_INPUT;
                     break;
                 }
 
                 case OPT_OUTPUT: {
                     snprintf(this->mOutputFileName, sizeof(this->mOutputFileName), "%s", args.OptionArg());
-                    count++;
+                    argumentFlags |= OPT_OUTPUT;
                     break;
                 }
 
                 case OPT_VERBOSE: {
                     this->mVerbose = true;
+                    argumentFlags |= OPT_VERBOSE;
                     break;
                 }
 
                 default: {
-                    this->mValid = false;
+                    argumentFlags = 0;
                     break;
                 }
             }
@@ -99,15 +99,22 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         } else {
             // handle error, one of: SO_OPT_INVALID, SO_OPT_MULTIPLE,
             // SO_ARG_INVALID, SO_ARG_INVALID_TYPE, SO_ARG_MISSING
-            this->mValid = false;
+            argumentFlags = 0;
         }
     }
 
-    if (count != 4) {
+    // check for options presented
+    uint32_t flags1 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC;
+    uint32_t flags2 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC_AT;
+
+    if ((argumentFlags & flags1) == flags1) {
+        this->mValid = true;
+    } else if ((argumentFlags & flags2) == flags2) {
+        this->mValid = true;
+    } else {
         this->mValid = false;
     }
 }
-
 
 ArgumentsParser::~ArgumentsParser(void)
 {
