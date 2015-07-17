@@ -53,46 +53,58 @@ void Recover::patchFile(char *inputFileName, char *outputFileName, uint32_t addr
     ifstream fileIn(inputFileName, ios::in | ios::binary | ios::ate);
 
     if (fileIn.is_open()) {
-        uint32_t len = (uint32_t)fileIn.tellg();
-        //ifstream::pos_type size =
-        uint8_t *buffer = new uint8_t[len];
-        fileIn.seekg(0, ios::beg);
-        fileIn.read((char *)buffer, len);
-        fileIn.close();
+        streampos filesize = fileIn.tellg();
 
-        snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", len);
-        log(strBuffer);
+        if (filesize > 0) {
+            uint32_t len = (uint32_t)filesize;
+            uint8_t *buffer = new uint8_t[len];
+            fileIn.seekg(0, ios::beg);
+            fileIn.read((char *)buffer, len);
+            fileIn.close();
 
-        if (crcSource == CrcFromAddress) {
-            uint32_t holdedCrc = buffer[crc] | (buffer[crc + 1] << 8) | (buffer[crc + 2] << 16) | (buffer[crc + 3] << 24);
-            crc = holdedCrc;
-
-            snprintf(strBuffer, sizeof(strBuffer), "Readed Target CRC: %08x", crc);
+            snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", len);
             log(strBuffer);
-        }
 
-        log("Applying patch...");
+            if (crcSource == CrcFromAddress) {
+                uint32_t holdedCrc = buffer[crc] | (buffer[crc + 1] << 8) | (buffer[crc + 2] << 16) | (buffer[crc + 3] << 24);
+                crc = holdedCrc;
 
-        this->patch(buffer, len, address, crc, log);
+                snprintf(strBuffer, sizeof(strBuffer), "Readed Target CRC: %08x", crc);
+                log(strBuffer);
+            }
 
-        snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
-        log(strBuffer);
+            log("Applying patch...");
 
-        ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+            this->patch(buffer, len, address, crc, log);
 
-        if (fileOut.is_open()) {
-            fileOut.write((char *)buffer, len);
-            fileOut.flush();
-            fileOut.close();
+            snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
+            log(strBuffer);
 
-            snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", len);
+            ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+
+            if (fileOut.is_open()) {
+                fileOut.write((char *)buffer, len);
+                fileOut.flush();
+                fileOut.close();
+
+                snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", len);
+                log(strBuffer);
+            } else {
+                snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
+                log(strBuffer);
+            }
+
+            delete []buffer;
+        } else if (filesize == 0) {
+            fileIn.close();
+            snprintf(strBuffer, sizeof(strBuffer), "Error: File empty: '%s'", inputFileName);
             log(strBuffer);
         } else {
-            snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
+            // < 0
+            fileIn.close();
+            snprintf(strBuffer, sizeof(strBuffer), "Error: Can't get file size: '%s'", inputFileName);
             log(strBuffer);
         }
-
-        delete []buffer;
     } else {
         snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", inputFileName);
         log(strBuffer);
