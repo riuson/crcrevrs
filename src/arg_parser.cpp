@@ -166,7 +166,7 @@ bool ArgumentsParser::validate(logger *log)
                     fileIn.seekg(this->mCrcReadAddress, ios::beg);
                     uint32_t readedCrc = 0;
 
-                    if (fileIn.read((char *)readedCrc, 4).gcount() == 4) {
+                    if (fileIn.read((char *)&readedCrc, 4).gcount() == 4) {
                         this->mCrcResult = readedCrc;
                     } else {
                         result = false;
