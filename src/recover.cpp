@@ -39,7 +39,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
     snprintf(strBuffer, sizeof(strBuffer), "Address: %08x", address);
     log(strBuffer);
 
-    snprintf(strBuffer, sizeof(strBuffer), "Target CRC: %08x", crc);
+    snprintf(strBuffer, sizeof(strBuffer), "Target CRC: 0x%08x", crc);
     log(strBuffer);
 
     snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", inputFileName);
