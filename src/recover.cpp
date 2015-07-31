@@ -26,7 +26,7 @@ Recover::~Recover(void)
     delete [] this->mTable;
 }
 
-void Recover::patchFile(char *inputFileName, char *outputFileName, uint32_t address, CrcFrom crcSource, uint32_t crc, logger *log)
+void Recover::patchFile(const char *inputFileName, const char *outputFileName, uint32_t address, uint32_t crc, logger *log)
 {
     char strBuffer[2048];
 
@@ -39,13 +39,8 @@ void Recover::patchFile(char *inputFileName, char *outputFileName, uint32_t addr
     snprintf(strBuffer, sizeof(strBuffer), "Address: %08x", address);
     log(strBuffer);
 
-    if (crcSource == CrcFromInput) {
-        snprintf(strBuffer, sizeof(strBuffer), "Target CRC: %08x", crc);
-        log(strBuffer);
-    } else {
-        snprintf(strBuffer, sizeof(strBuffer), "Target CRC at address: %08x", crc);
-        log(strBuffer);
-    }
+    snprintf(strBuffer, sizeof(strBuffer), "Target CRC: %08x", crc);
+    log(strBuffer);
 
     snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", inputFileName);
     log(strBuffer);
@@ -64,14 +59,6 @@ void Recover::patchFile(char *inputFileName, char *outputFileName, uint32_t addr
 
             snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", len);
             log(strBuffer);
-
-            if (crcSource == CrcFromAddress) {
-                uint32_t holdedCrc = buffer[crc] | (buffer[crc + 1] << 8) | (buffer[crc + 2] << 16) | (buffer[crc + 3] << 24);
-                crc = holdedCrc;
-
-                snprintf(strBuffer, sizeof(strBuffer), "Readed Target CRC: %08x", crc);
-                log(strBuffer);
-            }
 
             log("Applying patch...");
 

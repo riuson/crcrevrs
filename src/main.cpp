@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
         }
 
         Recover recover;
-        recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crcSource(), parser.crc(), log);
+        recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crc(), log);
     } else {
         ShowHelp();
     }

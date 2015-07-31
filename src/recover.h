@@ -2,13 +2,11 @@
 #define RECOVER_H
 
 #include <stdint.h>
+#include "logger.h"
 
-typedef void (logger)(const char *str);
 #define AllOnes 0xffffffff
 #define DefaultPolynomial 0xEDB88320
 #define TableSize 256
-
-enum CrcFrom { CrcFromInput, CrcFromAddress };
 
 class Recover
 {
@@ -17,7 +15,7 @@ private:
 public:
     Recover(void);
     ~Recover(void);
-    void patchFile(char *inputFileName, char *outputFileName, uint32_t address, CrcFrom crcSource, uint32_t crc, logger *log);
+    void patchFile(const char *inputFileName, const char *outputFileName, uint32_t address, uint32_t crc, logger *log);
     void patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t crc, logger *log);
 private:
     void findInTable(uint8_t sourceValue,  uint32_t *tableValue, uint32_t *tableIndex);

@@ -1,24 +1,14 @@
 #include "arg_parser.h"
 #include "3dparty/simpleopt.h"
-//#include <wchar.h>
-//#include <char.h>
 #include <stdlib.h>
 #include <iostream>
 #include <cstdio>
+#include <string.h>
+#include <fstream>
 using namespace std;
 
 ArgumentsParser::ArgumentsParser(int argc, char *argv[])
 {
-    enum {
-        OPT_HELP    = (0x01 << 0),
-        OPT_ADDRESS = (0x01 << 1),
-        OPT_CRC     = (0x01 << 2),
-        OPT_CRC_AT  = (0x01 << 3),
-        OPT_INPUT   = (0x01 << 4),
-        OPT_OUTPUT  = (0x01 << 5),
-        OPT_VERBOSE = (0x01 << 6)
-    };
-
     CSimpleOpt::SOption g_rgOptions[] = {
         {OPT_ADDRESS, "--address", SO_REQ_SEP},
         {OPT_CRC,     "--crc", SO_REQ_SEP},
@@ -31,9 +21,9 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         SO_END_OF_OPTIONS
     };
 
-    this->mCrcSource = CrcFromInput;
+    this->mCrcSource = CrcFromNone;
     this->mVerbose = false;
-    uint32_t argumentFlags = 0;
+    this->mCollectedOpts = OPT_NONE;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
 
@@ -44,49 +34,49 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 case OPT_ADDRESS: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mAddress = a;
-                    argumentFlags |= OPT_ADDRESS;
+                    this->mCrcWriteAddress = a;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_CRC: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrc = a;
+                    this->mCrcResult = a;
                     this->mCrcSource = CrcFromInput;
-                    argumentFlags |= OPT_CRC;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_CRC_AT: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrc = a;
+                    this->mCrcReadAddress = a;
                     this->mCrcSource = CrcFromAddress;
-                    argumentFlags |= OPT_CRC_AT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_INPUT: {
                     snprintf(this->mInputFileName, sizeof(this->mInputFileName), "%s", args.OptionArg());
-                    argumentFlags |= OPT_INPUT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_OUTPUT: {
                     snprintf(this->mOutputFileName, sizeof(this->mOutputFileName), "%s", args.OptionArg());
-                    argumentFlags |= OPT_OUTPUT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_VERBOSE: {
                     this->mVerbose = true;
-                    argumentFlags |= OPT_VERBOSE;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 default: {
-                    argumentFlags = 0;
+                    this->mCollectedOpts = OPT_NONE;
                     break;
                 }
             }
@@ -99,20 +89,8 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         } else {
             // handle error, one of: SO_OPT_INVALID, SO_OPT_MULTIPLE,
             // SO_ARG_INVALID, SO_ARG_INVALID_TYPE, SO_ARG_MISSING
-            argumentFlags = 0;
+            this->mCollectedOpts = OPT_NONE;
         }
-    }
-
-    // check for options presented
-    uint32_t flags1 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC;
-    uint32_t flags2 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC_AT;
-
-    if ((argumentFlags & flags1) == flags1) {
-        this->mValid = true;
-    } else if ((argumentFlags & flags2) == flags2) {
-        this->mValid = true;
-    } else {
-        this->mValid = false;
     }
 }
 
@@ -127,25 +105,20 @@ bool ArgumentsParser::valid(void)
 
 uint32_t ArgumentsParser::address(void)
 {
-    return (this->mAddress);
+    return (this->mCrcWriteAddress);
 }
 
 uint32_t ArgumentsParser::crc(void)
 {
-    return (this->mCrc);
+    return (this->mCrcResult);
 }
 
-CrcFrom ArgumentsParser::crcSource(void)
-{
-    return (this->mCrcSource);
-}
-
-char *ArgumentsParser::inputFileName(void)
+const char *ArgumentsParser::inputFileName(void) const
 {
     return (this->mInputFileName);
 }
 
-char *ArgumentsParser::outputFileName(void)
+const char *ArgumentsParser::outputFileName(void) const
 {
     return (this->mOutputFileName);
 }
