@@ -127,3 +127,98 @@ bool ArgumentsParser::verbose(void)
 {
     return (this->mVerbose);
 }
+
+bool ArgumentsParser::validate(logger *log)
+{
+    bool result = true;
+    char strBuffer[2048];
+
+    if ((this->mCollectedOpts & OPT_INPUT) == OPT_NONE) {
+        log("Input file not specified");
+        result = false;
+    }
+
+    if ((this->mCollectedOpts & OPT_OUTPUT) == OPT_NONE) {
+        log("Output file not specified");
+        result = false;
+    }
+
+    if ((this->mCollectedOpts & (OPT_CRC | OPT_CRC_AT)) == OPT_NONE) {
+        log("Desired CRC not specified");
+        result = false;
+    }
+
+    if (result) {
+        // try open source file
+        ifstream fileIn(this->mInputFileName, ios::in | ios::binary | ios::ate);
+
+        if (fileIn.is_open()) {
+            // get length
+            streampos filesize = fileIn.tellg();
+
+            // if file not empty
+            if (filesize > 0) {
+                // save length
+                this->mFileSize = (uint32_t)filesize;
+
+                // if specified, read crc from position in file
+                if (this->mCrcSource == CrcFromAddress) {
+                    fileIn.seekg(this->mCrcReadAddress, ios::beg);
+                    uint32_t readedCrc = 0;
+
+                    if (fileIn.read((char *)readedCrc, 4).gcount() == 4) {
+                        this->mCrcResult = readedCrc;
+                    } else {
+                        result = false;
+                    }
+                }
+
+                if (this->mCrcSource != CrcFromAddress) {
+                    fileIn.seekg(0, ios::beg);
+                    char b;
+
+                    if (fileIn.read(&b, 1).gcount() != 1) {
+                        result = false;
+                    }
+                }
+            }
+
+            fileIn.close();
+        } else {
+            result = false;
+        }
+
+        if (!result) {
+            snprintf(strBuffer, sizeof(strBuffer), "Cannot open input file: %s", this->mInputFileName);
+            log(strBuffer);
+        }
+    }
+
+    if (result) {
+        // try open output file
+        ofstream fileOut(this->mOutputFileName, ios::out | ios::binary);
+
+        if (fileOut.is_open()) {
+            fileOut.close();
+        } else {
+            snprintf(strBuffer, sizeof(strBuffer), "Cannot open output file: %s", this->mOutputFileName);
+            log(strBuffer);
+            result = false;
+        }
+    }
+
+    if (result) {
+        if (this->mCrcWriteAddress < this->mFileSize) {
+            uint32_t addr = this->mCrcWriteAddress;
+            addr += 4;
+
+            if (addr < 4 || addr > this->mFileSize) {
+                snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x", this->mCrcWriteAddress);
+                log(strBuffer);
+                result = false;
+            }
+        }
+    }
+
+    return result;
+}

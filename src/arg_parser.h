@@ -16,6 +16,7 @@ public:
     const char *inputFileName(void) const;
     const char *outputFileName(void) const;
     bool verbose();
+    bool validate(logger *log);
 
 private:
     enum Opts {

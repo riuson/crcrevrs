@@ -3,7 +3,7 @@
 // Author      : riuson
 // Version     :
 // Copyright   : Creative Commons
-// Description : Hello World in C++, Ansi-style
+// Description : Utility to recover CRC-32
 //============================================================================
 
 #include <iostream>
@@ -21,13 +21,13 @@ int main(int argc, char *argv[])
 
     ArgumentsParser parser(argc, argv);
 
-    if (parser.valid()) {
-        logger *log = &LogNull;
+    logger *log = &LogNull;
 
-        if (parser.verbose()) {
-            log = &Log;
-        }
+    if (parser.verbose()) {
+        log = &Log;
+    }
 
+    if (parser.validate(log)) {
         Recover recover;
         recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crc(), log);
     } else {
