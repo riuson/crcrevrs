@@ -163,23 +163,67 @@ bool ArgumentsParser::validate(logger *log)
                 // save length
                 this->mFileSize = (uint32_t)filesize;
 
+                // check file size and address
+                if (result) {
+                    /* [                     file content                    ]
+                     * 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 ... n-4 n-3 n-2 n-1 n±0 n+1 n+2 n+3 n+4 ...
+                     * valid, checksum in file
+                     * [    CRC32    ]
+                     *     [    CRC32    ]
+                     *                                     [    CRC32    ]
+                     *                                         [    CRC32    ]
+                     * valid, checksum extends file
+                     *                                             [    CRC32    ]
+                     *                                                 [    CRC32    ]
+                     *                                                     [    CRC32    ]
+                     *                                                         [    CRC32    ]
+                     * invalid, address out of file size
+                     *                                                             [    CRC32    ]
+                     * invalid, address limited by 32bit
+                     * CRC32 ]                                                                            [ CRC32 ...
+                     */
+
+                    bool success = true;
+                    uint32_t address_plus_4 = this->mCrcWriteAddress + 4;
+
+                    // check for address limited by 32 bit
+                    if (address_plus_4 < 4) {
+                        success = false;
+                    }
+
+                    // check for out of file size
+                    if (success && this->mCrcWriteAddress > this->mFileSize) {
+                        success = false;
+                    }
+
+                    if (!success) {
+                        snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x", this->mCrcWriteAddress);
+                        log(strBuffer);
+                        result = false;
+                    }
+                }
+
                 // if specified, read crc from position in file
-                if (this->mCrcSource == CrcFromAddress) {
+                if (result && this->mCrcSource == CrcFromAddress) {
                     fileIn.seekg(this->mCrcReadAddress, ios::beg);
                     uint32_t readedCrc = 0;
 
                     if (fileIn.read((char *)&readedCrc, 4).gcount() == 4) {
                         this->mCrcResult = readedCrc;
                     } else {
+                        snprintf(strBuffer, sizeof(strBuffer), "Cannot read input file: %s", this->mInputFileName);
+                        log(strBuffer);
                         result = false;
                     }
                 }
 
-                if (this->mCrcSource != CrcFromAddress) {
+                if (result && this->mCrcSource != CrcFromAddress) {
                     fileIn.seekg(0, ios::beg);
                     char b;
 
                     if (fileIn.read(&b, 1).gcount() != 1) {
+                        snprintf(strBuffer, sizeof(strBuffer), "Cannot read input file: %s", this->mInputFileName);
+                        log(strBuffer);
                         result = false;
                     }
                 }
@@ -187,12 +231,9 @@ bool ArgumentsParser::validate(logger *log)
 
             fileIn.close();
         } else {
-            result = false;
-        }
-
-        if (!result) {
             snprintf(strBuffer, sizeof(strBuffer), "Cannot open input file: %s", this->mInputFileName);
             log(strBuffer);
+            result = false;
         }
     }
 
@@ -206,19 +247,6 @@ bool ArgumentsParser::validate(logger *log)
             snprintf(strBuffer, sizeof(strBuffer), "Cannot open output file: %s", this->mOutputFileName);
             log(strBuffer);
             result = false;
-        }
-    }
-
-    if (result) {
-        if (this->mCrcWriteAddress < this->mFileSize) {
-            uint32_t addr = this->mCrcWriteAddress;
-            addr += 4;
-
-            if (addr < 4 || addr > this->mFileSize) {
-                snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x", this->mCrcWriteAddress);
-                log(strBuffer);
-                result = false;
-            }
         }
     }
 
