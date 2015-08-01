@@ -24,6 +24,8 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
     this->mCrcSource = CrcFromNone;
     this->mVerbose = false;
     this->mCollectedOpts = OPT_NONE;
+    this->mValid = false;
+    this->mFileSize = 0;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
 
