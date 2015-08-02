@@ -1,24 +1,14 @@
 #include "arg_parser.h"
 #include "3dparty/simpleopt.h"
-//#include <wchar.h>
-//#include <char.h>
 #include <stdlib.h>
 #include <iostream>
 #include <cstdio>
+#include <string.h>
+#include <fstream>
 using namespace std;
 
 ArgumentsParser::ArgumentsParser(int argc, char *argv[])
 {
-    enum {
-        OPT_HELP    = (0x01 << 0),
-        OPT_ADDRESS = (0x01 << 1),
-        OPT_CRC     = (0x01 << 2),
-        OPT_CRC_AT  = (0x01 << 3),
-        OPT_INPUT   = (0x01 << 4),
-        OPT_OUTPUT  = (0x01 << 5),
-        OPT_VERBOSE = (0x01 << 6)
-    };
-
     CSimpleOpt::SOption g_rgOptions[] = {
         {OPT_ADDRESS, "--address", SO_REQ_SEP},
         {OPT_CRC,     "--crc", SO_REQ_SEP},
@@ -31,9 +21,11 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         SO_END_OF_OPTIONS
     };
 
-    this->mCrcSource = CrcFromInput;
+    this->mCrcSource = CrcFromNone;
     this->mVerbose = false;
-    uint32_t argumentFlags = 0;
+    this->mCollectedOpts = OPT_NONE;
+    this->mValid = false;
+    this->mFileSize = 0;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
 
@@ -44,49 +36,49 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 case OPT_ADDRESS: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mAddress = a;
-                    argumentFlags |= OPT_ADDRESS;
+                    this->mCrcWriteAddress = a;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_CRC: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrc = a;
+                    this->mCrcResult = a;
                     this->mCrcSource = CrcFromInput;
-                    argumentFlags |= OPT_CRC;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_CRC_AT: {
                     uint32_t a;
                     sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrc = a;
+                    this->mCrcReadAddress = a;
                     this->mCrcSource = CrcFromAddress;
-                    argumentFlags |= OPT_CRC_AT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_INPUT: {
                     snprintf(this->mInputFileName, sizeof(this->mInputFileName), "%s", args.OptionArg());
-                    argumentFlags |= OPT_INPUT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_OUTPUT: {
                     snprintf(this->mOutputFileName, sizeof(this->mOutputFileName), "%s", args.OptionArg());
-                    argumentFlags |= OPT_OUTPUT;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 case OPT_VERBOSE: {
                     this->mVerbose = true;
-                    argumentFlags |= OPT_VERBOSE;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
 
                 default: {
-                    argumentFlags = 0;
+                    this->mCollectedOpts = OPT_NONE;
                     break;
                 }
             }
@@ -99,20 +91,8 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         } else {
             // handle error, one of: SO_OPT_INVALID, SO_OPT_MULTIPLE,
             // SO_ARG_INVALID, SO_ARG_INVALID_TYPE, SO_ARG_MISSING
-            argumentFlags = 0;
+            this->mCollectedOpts = OPT_NONE;
         }
-    }
-
-    // check for options presented
-    uint32_t flags1 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC;
-    uint32_t flags2 = OPT_ADDRESS | OPT_INPUT | OPT_OUTPUT | OPT_CRC_AT;
-
-    if ((argumentFlags & flags1) == flags1) {
-        this->mValid = true;
-    } else if ((argumentFlags & flags2) == flags2) {
-        this->mValid = true;
-    } else {
-        this->mValid = false;
     }
 }
 
@@ -127,25 +107,20 @@ bool ArgumentsParser::valid(void)
 
 uint32_t ArgumentsParser::address(void)
 {
-    return (this->mAddress);
+    return (this->mCrcWriteAddress);
 }
 
 uint32_t ArgumentsParser::crc(void)
 {
-    return (this->mCrc);
+    return (this->mCrcResult);
 }
 
-CrcFrom ArgumentsParser::crcSource(void)
-{
-    return (this->mCrcSource);
-}
-
-char *ArgumentsParser::inputFileName(void)
+const char *ArgumentsParser::inputFileName(void) const
 {
     return (this->mInputFileName);
 }
 
-char *ArgumentsParser::outputFileName(void)
+const char *ArgumentsParser::outputFileName(void) const
 {
     return (this->mOutputFileName);
 }
@@ -153,4 +128,127 @@ char *ArgumentsParser::outputFileName(void)
 bool ArgumentsParser::verbose(void)
 {
     return (this->mVerbose);
+}
+
+bool ArgumentsParser::validate(logger *log)
+{
+    bool result = true;
+    char strBuffer[2048];
+
+    if ((this->mCollectedOpts & OPT_INPUT) == OPT_NONE) {
+        log("Input file not specified");
+        result = false;
+    }
+
+    if ((this->mCollectedOpts & OPT_OUTPUT) == OPT_NONE) {
+        log("Output file not specified");
+        result = false;
+    }
+
+    if ((this->mCollectedOpts & (OPT_CRC | OPT_CRC_AT)) == OPT_NONE) {
+        log("Desired CRC not specified");
+        result = false;
+    }
+
+    if (result) {
+        // try open source file
+        ifstream fileIn(this->mInputFileName, ios::in | ios::binary | ios::ate);
+
+        if (fileIn.is_open()) {
+            // get length
+            streampos filesize = fileIn.tellg();
+
+            // if file not empty
+            if (filesize > 0) {
+                // save length
+                this->mFileSize = (uint32_t)filesize;
+
+                // check file size and address
+                if (result) {
+                    /* [                     file content                    ]
+                     * 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 ... n-4 n-3 n-2 n-1 n±0 n+1 n+2 n+3 n+4 ...
+                     * valid, checksum in file
+                     * [    CRC32    ]
+                     *     [    CRC32    ]
+                     *                                     [    CRC32    ]
+                     *                                         [    CRC32    ]
+                     * valid, checksum extends file
+                     *                                             [    CRC32    ]
+                     *                                                 [    CRC32    ]
+                     *                                                     [    CRC32    ]
+                     *                                                         [    CRC32    ]
+                     * invalid, address out of file size
+                     *                                                             [    CRC32    ]
+                     * invalid, address limited by 32bit
+                     * CRC32 ]                                                                            [ CRC32 ...
+                     */
+
+                    bool success = true;
+                    uint32_t address_plus_4 = this->mCrcWriteAddress + 4;
+
+                    // check for address limited by 32 bit
+                    if (address_plus_4 < 4) {
+                        success = false;
+                    }
+
+                    // check for out of file size
+                    if (success && this->mCrcWriteAddress > this->mFileSize) {
+                        success = false;
+                    }
+
+                    if (!success) {
+                        snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x", this->mCrcWriteAddress);
+                        log(strBuffer);
+                        result = false;
+                    }
+                }
+
+                // if specified, read crc from position in file
+                if (result && this->mCrcSource == CrcFromAddress) {
+                    fileIn.seekg(this->mCrcReadAddress, ios::beg);
+                    uint32_t readedCrc = 0;
+
+                    if (fileIn.read((char *)&readedCrc, 4).gcount() == 4) {
+                        this->mCrcResult = readedCrc;
+                    } else {
+                        snprintf(strBuffer, sizeof(strBuffer), "Cannot read input file: %s", this->mInputFileName);
+                        log(strBuffer);
+                        result = false;
+                    }
+                }
+
+                if (result && this->mCrcSource != CrcFromAddress) {
+                    fileIn.seekg(0, ios::beg);
+                    char b;
+
+                    if (fileIn.read(&b, 1).gcount() != 1) {
+                        snprintf(strBuffer, sizeof(strBuffer), "Cannot read input file: %s", this->mInputFileName);
+                        log(strBuffer);
+                        result = false;
+                    }
+                }
+            }
+
+            fileIn.close();
+        } else {
+            snprintf(strBuffer, sizeof(strBuffer), "Cannot open input file: %s", this->mInputFileName);
+            log(strBuffer);
+            result = false;
+        }
+    }
+
+    if (result) {
+        // try open output file
+        ofstream fileOut(this->mOutputFileName, ios::out | ios::binary);
+
+        if (fileOut.is_open()) {
+            fileOut.close();
+        } else {
+            snprintf(strBuffer, sizeof(strBuffer), "Cannot open output file: %s", this->mOutputFileName);
+            log(strBuffer);
+            result = false;
+        }
+    }
+
+    return result;
 }
