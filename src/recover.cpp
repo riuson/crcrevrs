@@ -51,37 +51,50 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
         streampos filesize = fileIn.tellg();
 
         if (filesize > 0) {
-            uint32_t len = (uint32_t)filesize;
-            uint8_t *buffer = new uint8_t[len];
-            fileIn.seekg(0, ios::beg);
-            fileIn.read((char *)buffer, len);
-            fileIn.close();
+            uint32_t dataSize = (uint32_t)filesize;
 
-            snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", len);
-            log(strBuffer);
+            uint8_t *buffer = new uint8_t[dataSize];
 
-            log("Applying patch...");
+            if (buffer != NULL) {
+                fileIn.seekg(0, ios::beg);
+                streamsize readed = fileIn.read((char *)buffer, dataSize).gcount();
+                fileIn.close();
 
-            this->patch(buffer, len, address, crc, log);
+                if ((readed > 0) && ((uint32_t)readed == dataSize)) {
+                    snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", dataSize);
+                    log(strBuffer);
 
-            snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
-            log(strBuffer);
+                    log("Applying patch...");
 
-            ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+                    this->patch(buffer, dataSize, address, crc, log);
 
-            if (fileOut.is_open()) {
-                fileOut.write((char *)buffer, len);
-                fileOut.flush();
-                fileOut.close();
+                    snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
+                    log(strBuffer);
 
-                snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", len);
-                log(strBuffer);
+                    ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+
+                    if (fileOut.is_open()) {
+                        fileOut.write((char *)buffer, dataSize);
+                        fileOut.flush();
+                        fileOut.close();
+
+                        snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", dataSize);
+                        log(strBuffer);
+                    } else {
+                        snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
+                        log(strBuffer);
+                    }
+                } else {
+                    snprintf(strBuffer, sizeof(strBuffer), "Input file reading failed: '%s'", inputFileName);
+                    log(strBuffer);
+                }
+
+                delete []buffer;
             } else {
-                snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
+                snprintf(strBuffer, sizeof(strBuffer), "Memory allocation (%d byte(s)) failed", dataSize);
                 log(strBuffer);
+                fileIn.close();
             }
-
-            delete []buffer;
         } else if (filesize == 0) {
             fileIn.close();
             snprintf(strBuffer, sizeof(strBuffer), "Error: File empty: '%s'", inputFileName);
