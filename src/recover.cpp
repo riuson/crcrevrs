@@ -36,7 +36,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
     snprintf(strBuffer, sizeof(strBuffer), "Output file: %s", outputFileName);
     log(strBuffer);
 
-    snprintf(strBuffer, sizeof(strBuffer), "Address: %08x", address);
+    snprintf(strBuffer, sizeof(strBuffer), "Address: 0x%08x", address);
     log(strBuffer);
 
     snprintf(strBuffer, sizeof(strBuffer), "Target CRC: 0x%08x", crc);
@@ -51,37 +51,58 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
         streampos filesize = fileIn.tellg();
 
         if (filesize > 0) {
-            uint32_t len = (uint32_t)filesize;
-            uint8_t *buffer = new uint8_t[len];
-            fileIn.seekg(0, ios::beg);
-            fileIn.read((char *)buffer, len);
-            fileIn.close();
+            uint32_t dataSize = (uint32_t)filesize;
+            uint32_t bufferSize = dataSize;
 
-            snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", len);
-            log(strBuffer);
-
-            log("Applying patch...");
-
-            this->patch(buffer, len, address, crc, log);
-
-            snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
-            log(strBuffer);
-
-            ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
-
-            if (fileOut.is_open()) {
-                fileOut.write((char *)buffer, len);
-                fileOut.flush();
-                fileOut.close();
-
-                snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", len);
-                log(strBuffer);
-            } else {
-                snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
-                log(strBuffer);
+            if (address + 4 >= dataSize) {
+                bufferSize += ((address + 4) - dataSize);
             }
 
-            delete []buffer;
+            uint8_t *buffer = new uint8_t[bufferSize];
+
+            if (buffer != NULL) {
+                snprintf(strBuffer, sizeof(strBuffer), "Allocated buffer, %d byte(s)", bufferSize);
+                log(strBuffer);
+
+                fileIn.seekg(0, ios::beg);
+                streamsize readed = fileIn.read((char *)buffer, dataSize).gcount();
+                fileIn.close();
+
+                if ((readed > 0) && ((uint32_t)readed == dataSize)) {
+                    snprintf(strBuffer, sizeof(strBuffer), "Readed %d byte(s)", dataSize);
+                    log(strBuffer);
+
+                    log("Applying patch...");
+
+                    this->patch(buffer, bufferSize, dataSize, address, crc, log);
+
+                    snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
+                    log(strBuffer);
+
+                    ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+
+                    if (fileOut.is_open()) {
+                        fileOut.write((char *)buffer, bufferSize);
+                        fileOut.flush();
+                        fileOut.close();
+
+                        snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", bufferSize);
+                        log(strBuffer);
+                    } else {
+                        snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
+                        log(strBuffer);
+                    }
+                } else {
+                    snprintf(strBuffer, sizeof(strBuffer), "Input file reading failed: '%s'", inputFileName);
+                    log(strBuffer);
+                }
+
+                delete []buffer;
+            } else {
+                snprintf(strBuffer, sizeof(strBuffer), "Memory allocation (%d byte(s)) failed", dataSize);
+                log(strBuffer);
+                fileIn.close();
+            }
         } else if (filesize == 0) {
             fileIn.close();
             snprintf(strBuffer, sizeof(strBuffer), "Error: File empty: '%s'", inputFileName);
@@ -98,12 +119,12 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
     }
 }
 
-void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t crc, logger *log)
+void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uint32_t address, uint32_t crc, logger *log)
 {
     char strBuffer[2048];
 
-    if (address + 4 >= size) {
-        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: %08x, but data array of size %08x", address, size);
+    if (address + 4 > bufferSize) {
+        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: 0x%08x, but data array of size %08x", address, fileSize);
         log(strBuffer);
         return;
     }
@@ -112,7 +133,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ������ crc � ������ ����������� ������ �� ��������
     uint32_t crcForward = AllOnes;
 
-    for (uint32_t i = 0; i < size && i < address; i++) {
+    for (uint32_t i = 0; i < fileSize && i < address; i++) {
         crcForward = this->getHashNext(crcForward, buffer[i]);
     }
 
@@ -123,7 +144,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ������ crc � �������� ����������� ������ �� ��������
     uint32_t crcBackward = crc ^ AllOnes;
 
-    for (uint32_t i = size - 1; i >= address + 4; i--) {
+    for (uint32_t i = fileSize - 1; i >= address + 4; i--) {
         crcBackward = this->getHashPrev(crcBackward, buffer[i]);
     }
 
@@ -151,7 +172,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ����������� ���������� crc ��� ��������� � ������
     uint32_t crcControl = AllOnes;
 
-    for (uint32_t i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < bufferSize; i++) {
         crcControl = this->getHashNext(crcControl, buffer[i]);
     }
 
