@@ -183,21 +183,18 @@ bool ArgumentsParser::validate(logger *log)
                      * CRC32 ]                                                                            [ CRC32 ...
                      */
 
-                    bool success = true;
                     uint32_t address_plus_4 = this->mCrcWriteAddress + 4;
 
                     // check for address limited by 32 bit
                     if (address_plus_4 < 4) {
-                        success = false;
+                        snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: from 0x%08x to 0x%08x", this->mCrcWriteAddress, address_plus_4);
+                        log(strBuffer);
+                        result = false;
                     }
 
                     // check for out of file size
-                    if (success && this->mCrcWriteAddress > this->mFileSize) {
-                        success = false;
-                    }
-
-                    if (!success) {
-                        snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x", this->mCrcWriteAddress);
+                    if (result && this->mCrcWriteAddress > this->mFileSize) {
+                        snprintf(strBuffer, sizeof(strBuffer), "Invalid address for CRC: 0x%08x, but last address in file is 0x%08x and max possible address is 0x%08x", this->mCrcWriteAddress, this->mFileSize - 1, this->mFileSize);
                         log(strBuffer);
                         result = false;
                     }
