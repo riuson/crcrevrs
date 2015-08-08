@@ -36,7 +36,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
     snprintf(strBuffer, sizeof(strBuffer), "Output file: %s", outputFileName);
     log(strBuffer);
 
-    snprintf(strBuffer, sizeof(strBuffer), "Address: %08x", address);
+    snprintf(strBuffer, sizeof(strBuffer), "Address: 0x%08x", address);
     log(strBuffer);
 
     snprintf(strBuffer, sizeof(strBuffer), "Target CRC: 0x%08x", crc);
@@ -86,7 +86,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
                         fileOut.flush();
                         fileOut.close();
 
-                        snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", dataSize);
+                        snprintf(strBuffer, sizeof(strBuffer), "Written %d byte(s)", bufferSize);
                         log(strBuffer);
                     } else {
                         snprintf(strBuffer, sizeof(strBuffer), "Error: Can't open file: '%s'", outputFileName);
