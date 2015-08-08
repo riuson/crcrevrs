@@ -9,6 +9,7 @@
 #include <iostream>
 #include "arg_parser.h"
 #include "recover.h"
+#include "revision.h"
 
 using namespace std;
 
@@ -51,6 +52,7 @@ void ShowHelp(void)
 {
     Log(
         "CRC-32 Recovery Utility\n\
+Revision " GIT_REVISION_ABBR " from " GIT_COMMIT_ADATE "\n\
 Using:\n\
 crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --output \"e:\\data\\file2.bin\" \n\
 --address   address of stub to correct calculated crc.\n\
