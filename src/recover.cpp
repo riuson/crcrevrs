@@ -123,8 +123,8 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
 {
     char strBuffer[2048];
 
-    if (address + 4 >= fileSize) {
-        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: %08x, but data array of size %08x", address, fileSize);
+    if (address + 4 > bufferSize) {
+        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: 0x%08x, but data array of size %08x", address, fileSize);
         log(strBuffer);
         return;
     }
