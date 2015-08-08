@@ -54,13 +54,16 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
             uint32_t dataSize = (uint32_t)filesize;
             uint32_t bufferSize = dataSize;
 
-            if (address + 4 > dataSize) {
-                bufferSize += (address - dataSize);
+            if (address + 4 >= dataSize) {
+                bufferSize += ((address + 4) - dataSize);
             }
 
             uint8_t *buffer = new uint8_t[bufferSize];
 
             if (buffer != NULL) {
+                snprintf(strBuffer, sizeof(strBuffer), "Allocated buffer, %d byte(s)", bufferSize);
+                log(strBuffer);
+
                 fileIn.seekg(0, ios::beg);
                 streamsize readed = fileIn.read((char *)buffer, dataSize).gcount();
                 fileIn.close();
