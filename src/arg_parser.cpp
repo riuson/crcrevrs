@@ -175,7 +175,7 @@ bool ArgumentsParser::validate(logger *log)
                 // check file size and address
                 if (result) {
                     /* [                     file content                    ]
-                     * 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 ... n-4 n-3 n-2 n-1 n±0 n+1 n+2 n+3 n+4 ...
+                     * 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 ... n-4 n-3 n-2 n-1 nÂ±0 n+1 n+2 n+3 n+4 ...
                      * valid, checksum in file
                      * [    CRC32    ]
                      *     [    CRC32    ]
