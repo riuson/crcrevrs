@@ -124,7 +124,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
     char strBuffer[2048];
 
     if (address + 4 > bufferSize) {
-        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: 0x%08x, but data array of size %08x", address, fileSize);
+        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: 0x%08x, but data array of size 0x%08x", address, fileSize);
         log(strBuffer);
         return;
     }
@@ -137,7 +137,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
         crcForward = this->getHashNext(crcForward, buffer[i]);
     }
 
-    snprintf(strBuffer, sizeof(strBuffer), "... %08x", crcForward);
+    snprintf(strBuffer, sizeof(strBuffer), "... 0x%08x", crcForward);
     log(strBuffer);
 
     log("Calculating CRC backward...");
@@ -148,7 +148,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
         crcBackward = this->getHashPrev(crcBackward, buffer[i]);
     }
 
-    snprintf(strBuffer, sizeof(strBuffer), "... %x", crcBackward);
+    snprintf(strBuffer, sizeof(strBuffer), "... 0x%08x", crcBackward);
     log(strBuffer);
 
     log("Calculating stub data...");
@@ -156,7 +156,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
     // ������ ��������
     uint32_t stub = this->calculateStub(crcForward, crcBackward);
 
-    snprintf(strBuffer, sizeof(strBuffer), "... %08x", stub);
+    snprintf(strBuffer, sizeof(strBuffer), "... 0x%08x", stub);
     log(strBuffer);
 
     log("Applying stub...");
@@ -178,7 +178,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
 
     crcControl ^= AllOnes;
 
-    snprintf(strBuffer, sizeof(strBuffer), "Target CRC: %08x, result CRC: %08x", crc, crcControl);
+    snprintf(strBuffer, sizeof(strBuffer), "Target CRC: 0x%08x, result CRC: 0x%08x", crc, crcControl);
     log(strBuffer);
 
     if (crcControl != crc) {
