@@ -35,27 +35,36 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
             switch (args.OptionId()) {
                 case OPT_ADDRESS: {
                     uint32_t a;
-                    sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrcWriteAddress = a;
-                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+
+                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                        this->mCrcWriteAddress = a;
+                        this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+                    }
+
                     break;
                 }
 
                 case OPT_CRC: {
                     uint32_t a;
-                    sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrcResult = a;
-                    this->mCrcSource = CrcFromInput;
-                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+
+                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                        this->mCrcResult = a;
+                        this->mCrcSource = CrcFromInput;
+                        this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+                    }
+
                     break;
                 }
 
                 case OPT_CRC_AT: {
                     uint32_t a;
-                    sscanf(args.OptionArg(), "%x", &a);
-                    this->mCrcReadAddress = a;
-                    this->mCrcSource = CrcFromAddress;
-                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+
+                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                        this->mCrcReadAddress = a;
+                        this->mCrcSource = CrcFromAddress;
+                        this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+                    }
+
                     break;
                 }
 
