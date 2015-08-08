@@ -14,7 +14,7 @@ git --git-dir $1/.git log --pretty=format:"#define GIT_REVISION \"%H\" %n#define
 
 # Formatting
 
-ASTYLE=astyle.exe
+ASTYLE=astyle
 
 if command -v $ASTYLE >/dev/null 2; then
   echo "AStyle detected."
