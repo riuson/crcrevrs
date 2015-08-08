@@ -52,8 +52,13 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
 
         if (filesize > 0) {
             uint32_t dataSize = (uint32_t)filesize;
+            uint32_t bufferSize = dataSize;
 
-            uint8_t *buffer = new uint8_t[dataSize];
+            if (address + 4 > dataSize) {
+                bufferSize += (address - dataSize);
+            }
+
+            uint8_t *buffer = new uint8_t[bufferSize];
 
             if (buffer != NULL) {
                 fileIn.seekg(0, ios::beg);
@@ -66,7 +71,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
 
                     log("Applying patch...");
 
-                    this->patch(buffer, dataSize, address, crc, log);
+                    this->patch(buffer, bufferSize, dataSize, address, crc, log);
 
                     snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
                     log(strBuffer);
@@ -74,7 +79,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
                     ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
 
                     if (fileOut.is_open()) {
-                        fileOut.write((char *)buffer, dataSize);
+                        fileOut.write((char *)buffer, bufferSize);
                         fileOut.flush();
                         fileOut.close();
 
@@ -111,12 +116,12 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
     }
 }
 
-void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t crc, logger *log)
+void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uint32_t address, uint32_t crc, logger *log)
 {
     char strBuffer[2048];
 
-    if (address + 4 >= size) {
-        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: %08x, but data array of size %08x", address, size);
+    if (address + 4 >= fileSize) {
+        snprintf(strBuffer, sizeof(strBuffer), "Error: Given address: %08x, but data array of size %08x", address, fileSize);
         log(strBuffer);
         return;
     }
@@ -125,7 +130,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ������ crc � ������ ����������� ������ �� ��������
     uint32_t crcForward = AllOnes;
 
-    for (uint32_t i = 0; i < size && i < address; i++) {
+    for (uint32_t i = 0; i < fileSize && i < address; i++) {
         crcForward = this->getHashNext(crcForward, buffer[i]);
     }
 
@@ -136,7 +141,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ������ crc � �������� ����������� ������ �� ��������
     uint32_t crcBackward = crc ^ AllOnes;
 
-    for (uint32_t i = size - 1; i >= address + 4; i--) {
+    for (uint32_t i = fileSize - 1; i >= address + 4; i--) {
         crcBackward = this->getHashPrev(crcBackward, buffer[i]);
     }
 
@@ -164,7 +169,7 @@ void Recover::patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t c
     // ����������� ���������� crc ��� ��������� � ������
     uint32_t crcControl = AllOnes;
 
-    for (uint32_t i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < bufferSize; i++) {
         crcControl = this->getHashNext(crcControl, buffer[i]);
     }
 

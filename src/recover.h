@@ -16,7 +16,7 @@ public:
     Recover(void);
     ~Recover(void);
     void patchFile(const char *inputFileName, const char *outputFileName, uint32_t address, uint32_t crc, logger *log);
-    void patch(uint8_t *buffer, uint32_t size, uint32_t address, uint32_t crc, logger *log);
+    void patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uint32_t address, uint32_t crc, logger *log);
 private:
     void findInTable(uint8_t sourceValue,  uint32_t *tableValue, uint32_t *tableIndex);
     void setByte(uint32_t *dword, uint8_t index, uint8_t byte);
