@@ -16,6 +16,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         {OPT_INPUT,   "--input", SO_REQ_SEP},
         {OPT_OUTPUT,  "--output", SO_REQ_SEP},
         {OPT_VERBOSE, "--verbose", SO_NONE},
+        {OPT_VERSION, "--version", SO_NONE},
         {OPT_HELP,    "--help", SO_NONE},
         {OPT_HELP,    "-?", SO_NONE},
         SO_END_OF_OPTIONS
@@ -23,6 +24,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
 
     this->mCrcSource = CrcFromNone;
     this->mVerbose = false;
+    this->mShowVersion = false;
     this->mCollectedOpts = OPT_NONE;
     this->mValid = false;
     this->mFileSize = 0;
@@ -86,6 +88,12 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                     break;
                 }
 
+                case OPT_VERSION: {
+                    this->mShowVersion = true;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+                    break;
+                }
+
                 default: {
                     this->mCollectedOpts = OPT_NONE;
                     break;
@@ -137,6 +145,11 @@ const char *ArgumentsParser::outputFileName(void) const
 bool ArgumentsParser::verbose(void)
 {
     return (this->mVerbose);
+}
+
+bool ArgumentsParser::showVersion()
+{
+    return this->mShowVersion;
 }
 
 bool ArgumentsParser::validate(logger *log)

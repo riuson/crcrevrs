@@ -16,6 +16,7 @@ public:
     const char *inputFileName(void) const;
     const char *outputFileName(void) const;
     bool verbose();
+    bool showVersion();
     bool validate(logger *log);
 
 private:
@@ -27,7 +28,8 @@ private:
         OPT_CRC_AT  = (0x01 << 3),
         OPT_INPUT   = (0x01 << 4),
         OPT_OUTPUT  = (0x01 << 5),
-        OPT_VERBOSE = (0x01 << 6)
+        OPT_VERBOSE = (0x01 << 6),
+        OPT_VERSION = (0x01 << 7)
     };
 
     enum CrcFrom {
@@ -46,6 +48,7 @@ private:
     Opts mCollectedOpts;
     bool mValid;
     bool mVerbose;
+    bool mShowVersion;
     uint32_t mFileSize;
 };
 

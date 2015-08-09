@@ -14,6 +14,7 @@
 using namespace std;
 
 void ShowHelp(void);
+void ShowVersion(void);
 void Log(const char *str);
 void LogNull(const char *str);
 
@@ -28,7 +29,9 @@ int main(int argc, char *argv[])
         log = &Log;
     }
 
-    if (parser.validate(log)) {
+    if (parser.showVersion()) {
+        ShowVersion();
+    } else if (parser.validate(log)) {
         Recover recover;
         recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crc(), log);
     } else {
@@ -52,7 +55,6 @@ void ShowHelp(void)
 {
     Log(
         "CRC-32 Recovery Utility\n\
-Revision " GIT_REVISION_ABBR " from " GIT_COMMIT_ADATE "\n\
 Using:\n\
 crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --output \"e:\\data\\file2.bin\" \n\
 --address   address of stub to correct calculated crc.\n\
@@ -61,4 +63,12 @@ crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --outp
 --verbose   show log.\n\
 --input     input binary file.\n\
 --output    output binary file.\n");
+}
+
+
+void ShowVersion(void)
+{
+    Log(
+        "CRC-32 Recovery Utility\n\
+Revision " GIT_REVISION_ABBR " from " GIT_COMMIT_ADATE "\n");
 }
