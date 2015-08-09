@@ -38,7 +38,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 case OPT_ADDRESS: {
                     uint32_t a;
 
-                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                    if (this->strtoul(args.OptionArg(), &a)) {
                         this->mCrcWriteAddress = a;
                         this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     }
@@ -49,7 +49,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 case OPT_CRC: {
                     uint32_t a;
 
-                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                    if (this->strtoul(args.OptionArg(), &a)) {
                         this->mCrcResult = a;
                         this->mCrcSource = CrcFromInput;
                         this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
@@ -61,7 +61,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
                 case OPT_CRC_AT: {
                     uint32_t a;
 
-                    if (sscanf(args.OptionArg(), "%i", &a) == 1) {
+                    if (this->strtoul(args.OptionArg(), &a)) {
                         this->mCrcReadAddress = a;
                         this->mCrcSource = CrcFromAddress;
                         this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
@@ -266,6 +266,27 @@ bool ArgumentsParser::validate(logger *log)
             snprintf(strBuffer, sizeof(strBuffer), "Cannot open output file: %s", this->mOutputFileName);
             log(strBuffer);
             result = false;
+        }
+    }
+
+    return result;
+}
+
+bool ArgumentsParser::strtoul(const char *str, uint32_t *value) const
+{
+    bool result = false;
+    uint32_t a;
+    *value = 0;
+
+    if ((strstr(str, "x") != NULL) || (strstr(str, "X") != NULL)) {
+        if (sscanf(str, "%x", &a) == 1) {
+            *value = a;
+            result = true;
+        }
+    } else {
+        if (sscanf(str, "%u", &a) == 1) {
+            *value = a;
+            result = true;
         }
     }
 

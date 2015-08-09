@@ -50,6 +50,8 @@ private:
     bool mVerbose;
     bool mShowVersion;
     uint32_t mFileSize;
+
+    bool strtoul(const char *str, uint32_t *value) const;
 };
 
 
