@@ -62,7 +62,9 @@ crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --outp
 --crc-at    target crc placed in file at specified address.\n\
 --verbose   show log.\n\
 --input     input binary file.\n\
---output    output binary file.\n");
+--output    output binary file.\n\
+--test      test algorithm.\n"
+    );
 }
 
 
