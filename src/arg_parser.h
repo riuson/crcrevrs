@@ -18,6 +18,7 @@ public:
     bool verbose();
     bool showVersion();
     bool validate(logger *log);
+    bool test() const;
 
 private:
     enum Opts {
@@ -29,7 +30,8 @@ private:
         OPT_INPUT   = (0x01 << 4),
         OPT_OUTPUT  = (0x01 << 5),
         OPT_VERBOSE = (0x01 << 6),
-        OPT_VERSION = (0x01 << 7)
+        OPT_VERSION = (0x01 << 7),
+        OPT_TEST = (0x01 << 8)
     };
 
     enum CrcFrom {
@@ -49,6 +51,7 @@ private:
     bool mValid;
     bool mVerbose;
     bool mShowVersion;
+    bool mTest;
     uint32_t mFileSize;
 
     bool strtoul(const char *str, uint32_t *value) const;

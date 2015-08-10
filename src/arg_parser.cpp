@@ -17,6 +17,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
         {OPT_OUTPUT,  "--output", SO_REQ_SEP},
         {OPT_VERBOSE, "--verbose", SO_NONE},
         {OPT_VERSION, "--version", SO_NONE},
+        {OPT_TEST,    "--test", SO_NONE},
         {OPT_HELP,    "--help", SO_NONE},
         {OPT_HELP,    "-?", SO_NONE},
         SO_END_OF_OPTIONS
@@ -28,6 +29,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
     this->mCollectedOpts = OPT_NONE;
     this->mValid = false;
     this->mFileSize = 0;
+    this->mTest = false;
 
     CSimpleOpt args(argc, argv, g_rgOptions);
 
@@ -90,6 +92,12 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[])
 
                 case OPT_VERSION: {
                     this->mShowVersion = true;
+                    this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
+                    break;
+                }
+
+                case OPT_TEST: {
+                    this->mTest = true;
                     this->mCollectedOpts = (Opts)(this->mCollectedOpts | args.OptionId());
                     break;
                 }
@@ -270,6 +278,11 @@ bool ArgumentsParser::validate(logger *log)
     }
 
     return result;
+}
+
+bool ArgumentsParser::test() const
+{
+    return this->mTest;
 }
 
 bool ArgumentsParser::strtoul(const char *str, uint32_t *value) const

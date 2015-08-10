@@ -9,6 +9,7 @@
 #include <iostream>
 #include "arg_parser.h"
 #include "recover.h"
+#include "tester.h"
 #include "revision.h"
 
 using namespace std;
@@ -31,6 +32,14 @@ int main(int argc, char *argv[])
 
     if (parser.showVersion()) {
         ShowVersion();
+    } else if (parser.test()) {
+        Tester tester;
+
+        if (tester.run(log)) {
+            Log("All runs success");
+        } else {
+            Log("Some run failed");
+        }
     } else if (parser.validate(log)) {
         Recover recover;
         recover.patchFile(parser.inputFileName(), parser.outputFileName(), parser.address(), parser.crc(), log);
@@ -62,7 +71,9 @@ crcrec.exe --address 0x08 --crc 0x123456ab --input \"e:\\data\\file.bin\" --outp
 --crc-at    target crc placed in file at specified address.\n\
 --verbose   show log.\n\
 --input     input binary file.\n\
---output    output binary file.\n");
+--output    output binary file.\n\
+--test      test algorithm.\n"
+    );
 }
 
 
