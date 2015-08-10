@@ -130,7 +130,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
     }
 
     log("Calculating CRC forward...");
-    // ������ crc � ������ ����������� ������ �� ��������
+    // calculate crc forward to stub
     uint32_t crcForward = AllOnes;
 
     for (uint32_t i = 0; i < fileSize && i < address; i++) {
@@ -141,7 +141,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
     log(strBuffer);
 
     log("Calculating CRC backward...");
-    // ������ crc � �������� ����������� ������ �� ��������
+    // calculate crc backward to stub
     uint32_t crcBackward = crc ^ AllOnes;
 
     for (uint32_t i = fileSize - 1; i >= address + 4; i--) {
@@ -153,7 +153,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
 
     log("Calculating stub data...");
 
-    // ������ ��������
+    // calculate stub
     uint32_t stub = this->calculateStub(crcForward, crcBackward);
 
     snprintf(strBuffer, sizeof(strBuffer), "... 0x%08x", stub);
@@ -161,7 +161,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
 
     log("Applying stub...");
 
-    // ��������� ��������
+    // apply stub
     buffer[address + 0] = this->getByte(stub, 3);
     buffer[address + 1] = this->getByte(stub, 2);
     buffer[address + 2] = this->getByte(stub, 1);
@@ -169,7 +169,7 @@ void Recover::patch(uint8_t *buffer, uint32_t bufferSize, uint32_t fileSize, uin
 
     log("Comparing...");
 
-    // ����������� ���������� crc ��� ��������� � ������
+    // calculate crc and compare
     uint32_t crcControl = AllOnes;
 
     for (uint32_t i = 0; i < bufferSize; i++) {
@@ -194,7 +194,7 @@ void Recover::findInTable(uint8_t sourceValue,  uint32_t *tableValue, uint32_t *
     } a;
 
     for (uint32_t i = 0; i < TableSize; i++) {
-        // ���� ������� ���� ���������
+        // if high byte equals
         a.dword = this->mTable[i];
 
         if (sourceValue == a.bytes[3]) {
@@ -245,12 +245,12 @@ uint32_t Recover::getHashPrev(uint32_t nextValue, uint8_t nextByte)
     uint32_t tableIndex = 0;
     uint32_t tableValue = 0;
     this->findInTable(this->getByte(nextValue, 3), &tableValue, &tableIndex);
-    // ��� �� ����� ��������� �������� � ��� ������
-    // ������� ���� �� (previousValue ^ nextByte) = tableIndex
+    // value from table and index are known
+    // low byte from (previousValue ^ nextByte) = tableIndex
     uint32_t prevValueL = (tableIndex ^ nextByte) & 0x000000ff;
 
-    // � (crc32Table[(previousValue ^ nextByte) & 0xFF]) = tableValue
-    // ������ ����� ����� (previousValue >> 8), �.�. prevValue ��� �������� �����
+    // and (crc32Table[(previousValue ^ nextByte) & 0xFF]) = tableValue
+    // so can find (previousValue >> 8), i.e. prevValue without low byte
     uint32_t prevValueH = nextValue ^ tableValue;
     prevValueH = (prevValueH << 8) & 0xffffff00;
 
