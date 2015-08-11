@@ -266,7 +266,7 @@ bool ArgumentsParser::validate(logger *log)
 
     if (result) {
         // try open output file
-        ofstream fileOut(this->mOutputFileName, ios::out | ios::binary);
+        ofstream fileOut(this->mOutputFileName, ios::out | ios::binary | ios::ate | ios::app);
 
         if (fileOut.is_open()) {
             fileOut.close();
