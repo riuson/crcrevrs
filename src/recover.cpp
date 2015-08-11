@@ -79,7 +79,7 @@ void Recover::patchFile(const char *inputFileName, const char *outputFileName, u
                     snprintf(strBuffer, sizeof(strBuffer), "\nOpening file: '%s'...", outputFileName);
                     log(strBuffer);
 
-                    ofstream fileOut(outputFileName, ios::out | ios::binary | ios::ate);
+                    ofstream fileOut(outputFileName, ios::out | ios::binary | ios::trunc);
 
                     if (fileOut.is_open()) {
                         fileOut.write((char *)buffer, bufferSize);
